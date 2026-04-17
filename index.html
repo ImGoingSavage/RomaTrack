@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RomaTrack">
+
+    <link rel="apple-touch-icon" href="icono.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RomaTrack - Habit Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* 1. CONFIGURACIÓN DE FONDO */
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            margin: 0;
+            padding: 30px;
+            color: white;
+            background-image: url('fondo.png'); 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-color: #0a0a0a; 
+        }
+
+        /* 2. DISEÑO DEL LOGIN */
+        #auth-container { 
+            max-width: 350px; 
+            margin: 100px auto; 
+            text-align: center; 
+            background: rgba(15, 15, 15, 0.8); 
+            padding: 40px; 
+            border-radius: 24px; 
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 3. TÍTULO CON GRADIENTE */
+        #titulo-app {
+            font-size: 38px;
+            font-weight: 900;
+            margin: 0;
+            letter-spacing: -1.5px;
+            background: linear-gradient(to right, #e6e6e6,  #dad9d9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        /* 4. ENCABEZADO PRINCIPAL */
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 25px; 
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px 35px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        /* 5. EL GRID DEL TRACKER */
+        .tracker-grid { 
+            display: grid; 
+            grid-template-columns: 180px repeat(var(--days), 35px) 60px; 
+            gap: 15px 5px; 
+            align-items: end;
+            overflow-x: auto; 
+            padding: 25px;
+            background: rgba(0, 0, 0, 0.6); 
+            border-radius: 22px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* 6. ESTILOS DE FILAS Y CELDAS */
+        .habit-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-width: 180px;
+            padding-right: 15px;
+        }
+
+        .habit-name { font-size: 18px; color: #fff; font-weight: 500; }
+
+        .btn-delete {
+            background: transparent;
+            color: rgba(255, 77, 77, 0.6);
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-delete:hover { color: #bb0404; transform: scale(1.2); }
+
+        .cell-wrapper { display: flex; flex-direction: column; align-items: center; height: 55px; justify-content: flex-end; }
+        .cell-date { font-size: 10px; color: rgba(255,255,255,0.4); margin-bottom: 5px; font-weight: bold; }
+
+        .cell { 
+            width: 28px; height: 28px; 
+            background-color: rgba(255, 255, 255, 0.07); 
+            border-radius: 8px; 
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .cell.completed { 
+            background-color: #17971b; 
+            box-shadow: 0 0 15px rgba(23, 151, 27, 0.4); 
+        }
+        .cell.future { opacity: 0.1; cursor: not-allowed; pointer-events: none; }
+        .cell:hover { transform: scale(1.2); border: 1px solid white; }
+
+        .streak-badge {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            border: 2px solid rgba(76, 175, 80, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #4CAF50;
+            background: rgba(0,0,0,0.3);
+        }
+
+        /* 7. PANEL DE ESTADÍSTICAS (MODIFICADO) */
+        .stats-container {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            /* Cambio a fondo oscuro sólido */
+            background: rgba(0, 0, 0, 0.85); 
+            padding: 25px;
+            border-radius: 20px;
+            /* Eliminamos el blur exagerado */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Color de los nombres de los hábitos en stats */
+        .stat-card h3 { 
+            margin: 0 0 15px 0; 
+            font-size: 16px; 
+            color: #ffffff; /* Texto blanco */
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(to right, #4CAF50, #00FF88); /* Gradiente verde más vivo */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        /* Color de las etiquetas "Semana", "Mes", etc. */
+        .stat-label { 
+            font-size: 11px; 
+            color: #aaaaaa; /* Gris claro para que resalte en el fondo negro */
+            margin-top: 4px; 
+            font-weight: bold; 
+            text-transform: uppercase;
+        }
+
+        /* 8. BOTONES E INPUTS */
+        button { 
+            background: #3eef44; color: black; border: none; padding: 12px 24px; 
+            border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.3s; 
+        }
+        button:hover { background: #45a049; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3); }
+        
+        input { 
+            background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); 
+            padding: 14px; border-radius: 12px; width: 100%; box-sizing: border-box; outline: none;
+        }
+        input:focus { border-color: #ff147e; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-container">
+        <h1 style="color: white; margin-bottom: 30px; letter-spacing: -2px;">RomaTrack</h1>
+        <input type="email" id="email" placeholder="Email">
+        <div style="height: 10px;"></div>
+        <input type="password" id="password" placeholder="Contraseña">
+        <button onclick="acceder()" style="width: 100%; margin-top: 20px;">Entrar / Registrarse</button>
+        <p id="auth-error" style="color: #ff4d4d; margin-top: 15px; font-size: 13px;"></p>
+    </div>
+
+    <div id="app-container" style="display: none;">
+        <div class="header">
+            <h1 id="titulo-app">Cargando...</h1>
+            <div>
+                <button onclick="crearHabitoReal()">+ Nuevo Hábito</button>
+                <button onclick="cerrarSesion()" style="background: #333; color: white; margin-left: 10px;">Salir</button>
+            </div>
+        </div>
+        
+        <div id="grid-container" class="tracker-grid"></div>
+
+        <h2 style="margin-top: 40px; color: rgba(0, 0, 0, 0.4); font-size: 16px; text-transform: uppercase; letter-spacing: 1px;">Estadísticas de Cumplimiento</h2>
+        <div id="stats-panel" class="stats-container"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
