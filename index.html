@@ -19,7 +19,7 @@
             color: white;
             background-image: url('fondo.png'); 
             background-size: cover;
-            background-position: center top; /* Para ver mejor el rostro en vertical */
+            background-position: center top;
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-color: #0a0a0a; 
@@ -63,10 +63,11 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
-        /* 5. EL GRID CON COLUMNA PEGAJOSA (Sticky) */
+        /* 5. EL GRID CON COLUMNA PEGAJOSA (Sticky) CORREGIDA */
         .tracker-grid { 
             display: grid; 
-            grid-template-columns: 160px repeat(var(--days), 35px) 60px; 
+            /* REDUCIDO: De 160px a 120px para que el rectángulo sea más angosto */
+            grid-template-columns: 120px repeat(var(--days), 35px) 60px; 
             gap: 15px 5px; 
             align-items: end;
             overflow-x: auto; 
@@ -80,7 +81,7 @@
         .sticky-header-corner {
             position: sticky;
             left: 0;
-            background: rgba(25, 25, 25, 0.98); /* Fondo sólido para tapar lo de abajo */
+            background: rgba(25, 25, 25, 0.98); 
             z-index: 6;
             height: 100%;
         }
@@ -89,7 +90,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            min-width: 160px;
+            /* REDUCIDO: Ajustado a 120px */
+            min-width: 120px;
             padding-right: 15px;
             position: sticky;
             left: 0;
@@ -136,9 +138,10 @@
         @media (max-width: 480px) {
             #titulo-app { font-size: 20px; }
             .header { padding: 15px; flex-direction: column; gap: 10px; }
-            .tracker-grid { grid-template-columns: 130px repeat(var(--days), 35px) 60px; }
-            .habit-container { min-width: 130px; }
-            body { background-size: 160% auto; } /* Zoom ajustado para ver la cara */
+            /* REDUCIDO: De 130px a 100px para móvil */
+            .tracker-grid { grid-template-columns: 100px repeat(var(--days), 35px) 60px; }
+            .habit-container { min-width: 100px; }
+            body { background-size: 160% auto; } 
         }
     </style>
 </head>

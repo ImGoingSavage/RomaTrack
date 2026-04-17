@@ -64,7 +64,6 @@ async function cargarTracker(userId) {
     const { data: habitos } = await miSupabase.from('habito').select('*').eq('id_usuario', userId);
     const { data: registros } = await miSupabase.from('registro_habito').select('*').eq('id_usuario', userId);
 
-    // Primer div vacío para la esquina pegajosa
     container.innerHTML = "<div class='sticky-header-corner'></div>"; 
     fechasDelMes.forEach(f => container.innerHTML += `<div class="date-label">${f.split('-')[2]}</div>`);
     container.innerHTML += `<div class="date-label">Racha</div>`;
