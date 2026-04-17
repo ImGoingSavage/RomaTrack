@@ -25,7 +25,7 @@
             background-color: #0a0a0a; 
         }
 
-        /* 2. DISEÑO DEL LOGIN */
+        /* 2. LOGIN */
         #auth-container { 
             max-width: 350px; 
             margin: 100px auto; 
@@ -35,10 +35,9 @@
             border-radius: 24px; 
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
         }
 
-        /* 3. TÍTULO CON GRADIENTE */
+        /* 3. TÍTULO */
         #titulo-app {
             font-size: 32px;
             font-weight: 900;
@@ -63,14 +62,15 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
-        /* 5. EL GRID CON AJUSTE DE MARGEN IZQUIERDO */
+        /* 5. EL GRID */
         .tracker-grid { 
             display: grid; 
-            grid-template-columns: 120px repeat(var(--days), 35px) 60px; 
+            /* REDUCIDO A 110px */
+            grid-template-columns: 110px repeat(var(--days), 35px) 60px; 
             gap: 15px 5px; 
             align-items: end;
             overflow-x: auto; 
-            padding: 20px; /* Mantenemos el padding para el resto del grid */
+            padding: 20px;
             background: rgba(0, 0, 0, 0.65); 
             border-radius: 22px;
             backdrop-filter: blur(12px);
@@ -81,10 +81,10 @@
         .sticky-header-corner {
             position: sticky;
             left: 0;
-            background: rgba(25, 25, 25, 0.98); 
-            z-index: 6;
+            background: #1a1a1a !important; 
+            z-index: 10;
             height: 100%;
-            /* AJUSTE: Movemos a la izquierda para pegar al borde */
+            /* Pegado total al borde del grid */
             margin-left: -20px; 
             padding-left: 20px;
         }
@@ -94,22 +94,23 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            min-width: 120px;
+            /* REDUCIDO A 110px */
+            min-width: 110px;
             position: sticky;
             left: 0;
-            background: rgba(25, 25, 25, 0.98);
-            z-index: 5;
-            border-radius: 10px 0 0 10px;
-            /* AJUSTE: Margen negativo igual al padding del grid para pegar al borde */
+            background: #1a1a1a !important;
+            z-index: 9;
+            /* Pegado total al borde */
             margin-left: -20px; 
-            padding-left: 20px;
-            padding-right: 15px;
-            box-shadow: 4px 0 8px rgba(0,0,0,0.3);
+            padding-left: 15px;
+            padding-right: 10px;
+            /* Quitamos redondez izquierda para que nazca del borde */
+            border-radius: 0 10px 10px 0;
+            box-shadow: 6px 0 10px rgba(0,0,0,0.4);
         }
 
-        /* 6. ESTILOS DE CELDAS */
-        .habit-name { font-size: 16px; color: #fff; font-weight: 500; }
-        .btn-delete { background: transparent; color: rgba(255, 77, 77, 0.6); border: none; font-size: 20px; cursor: pointer; }
+        .habit-name { font-size: 14px; color: #fff; font-weight: 500; }
+        .btn-delete { background: transparent; color: rgba(255, 77, 77, 0.6); border: none; font-size: 18px; cursor: pointer; }
         
         .cell-wrapper { display: flex; flex-direction: column; align-items: center; height: 55px; justify-content: flex-end; }
         .cell-date { font-size: 10px; color: rgba(255,255,255,0.4); margin-bottom: 5px; font-weight: bold; }
@@ -129,31 +130,29 @@
             font-size: 14px; font-weight: bold; color: #4CAF50; background: rgba(0,0,0,0.3);
         }
 
-        /* 7. ESTADÍSTICAS */
+        /* ESTADÍSTICAS */
         .stats-container { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .stat-card { background: rgba(0, 0, 0, 0.85); padding: 25px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15); text-align: center; }
         .stat-card h3 { margin: 0 0 15px 0; font-size: 16px; color: #ffffff; text-transform: uppercase; }
         .stat-value { font-size: 26px; font-weight: 800; background: linear-gradient(to right, #4CAF50, #00FF88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; }
         .stat-label { font-size: 11px; color: #aaaaaa; margin-top: 4px; font-weight: bold; text-transform: uppercase; }
 
-        /* 8. BOTONES E INPUTS */
         button { background: #3eef44; color: black; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        input { background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 14px; border-radius: 12px; width: 100%; box-sizing: border-box; outline: none; }
 
-        /* MEDIA QUERIES PARA IPHONE */
         @media (max-width: 480px) {
             #titulo-app { font-size: 20px; }
             .header { padding: 15px; flex-direction: column; gap: 10px; }
+            /* AJUSTES IPHONE */
             .tracker-grid { 
-                grid-template-columns: 100px repeat(var(--days), 35px) 60px; 
-                padding: 10px; /* Reducimos padding en móvil */
+                grid-template-columns: 90px repeat(var(--days), 35px) 60px; 
+                padding: 10px; 
             }
             .habit-container, .sticky-header-corner { 
-                min-width: 100px; 
-                margin-left: -10px; /* Ajuste para los 10px de padding del grid en móvil */
-                padding-left: 10px; 
+                min-width: 90px; 
+                margin-left: -10px; 
+                padding-left: 8px; 
             }
-            body { background-size: 160% auto; } 
+            .habit-name { font-size: 13px; }
         }
     </style>
 </head>

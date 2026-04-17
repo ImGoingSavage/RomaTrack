@@ -107,7 +107,6 @@ function actualizarEstadisticas(habitos, registros) {
 
     habitos.forEach(habito => {
         const misReg = registros.filter(r => r.id_hab === habito.id_hab);
-        
         const regMes = misReg.filter(r => r.fecha_cumplido.startsWith(hoy.toLocaleDateString('en-CA').substring(0,7))).length;
         const pctMes = ((regMes / diaMes) * 100).toFixed(0);
 
