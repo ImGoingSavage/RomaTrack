@@ -5,193 +5,510 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RomaTrack">
     <link rel="apple-touch-icon" href="icono.png">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RomaTrack - Habit Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* 1. CONFIGURACIÓN DE FONDO */
-        body { 
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
-            margin: 0;
-            padding: 20px;
-            color: white;
-            background-image: url('fondo.png'); 
+        /* ─── VARIABLES ─────────────────────────────────────── */
+        :root {
+            --green:        #17971b;
+            --green-glow:   rgba(23, 151, 27, 0.45);
+            --green-soft:   rgba(23, 151, 27, 0.15);
+            --accent:       #3eef44;
+            --surface:      rgba(12, 12, 12, 0.78);
+            --surface-2:    rgba(20, 20, 20, 0.85);
+            --border:       rgba(255, 255, 255, 0.07);
+            --text:         #f0f0f0;
+            --text-dim:     rgba(255, 255, 255, 0.38);
+            --danger:       #ff4d4d;
+            --radius-lg:    22px;
+            --radius-md:    14px;
+            --radius-sm:    8px;
+            --days:         31; /* fallback */
+        }
+
+        /* ─── RESET & BASE ──────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Mono', monospace;
+            color: var(--text);
+            background-image: url('fondo.png');
             background-size: cover;
             background-position: center top;
             background-repeat: no-repeat;
-            background-attachment: fixed;
-            background-color: #0a0a0a; 
+            background-color: #080808;
+            min-height: 100dvh;
+            padding: 20px;
         }
 
-        /* 2. LOGIN */
-        #auth-container { 
-            max-width: 350px; 
-            margin: 100px auto; 
-            text-align: center; 
-            background: rgba(15, 15, 15, 0.85); 
-            padding: 40px; 
-            border-radius: 24px; 
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        /* Fix para Safari iOS — background-attachment: fixed rompe el scroll */
+        @supports (-webkit-touch-callout: none) {
+            body { background-attachment: scroll; }
         }
 
-        /* 3. TÍTULO */
-        #titulo-app {
-            font-size: 32px;
+        /* ─── TOAST ─────────────────────────────────────────── */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #1a1a1a;
+            color: var(--text);
+            padding: 12px 22px;
+            border-radius: 100px;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 9999;
+            white-space: nowrap;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ─── MODAL ─────────────────────────────────────────── */
+        #modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        #modal-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+        #modal-box {
+            background: #111;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            width: min(380px, 90vw);
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+        #modal-overlay.show #modal-box { transform: scale(1); }
+        #modal-box h2 { font-family: 'Syne', sans-serif; font-size: 20px; margin-bottom: 16px; }
+        #modal-input {
+            width: 100%;
+            padding: 13px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #modal-input:focus { border-color: var(--accent); }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+        /* ─── LOGIN ─────────────────────────────────────────── */
+        #auth-container {
+            max-width: 360px;
+            margin: 80px auto;
+            background: var(--surface);
+            padding: 44px 36px;
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+        }
+        #auth-container h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 34px;
             font-weight: 900;
-            margin: 0;
             letter-spacing: -1.5px;
-            background: linear-gradient(to right, #e6e6e6, #dad9d9);
+            background: linear-gradient(135deg, #fff 40%, #888);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
-            display: inline-block;
+            margin-bottom: 32px;
+            text-align: center;
         }
 
-        /* 4. ENCABEZADO */
-        .header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 25px; 
-            background: rgba(0, 0, 0, 0.5);
-            padding: 20px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 13px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
         }
-        
-        /* 5. EL GRID */
-        .tracker-grid { 
-            display: grid; 
-            grid-template-columns: 70px repeat(var(--days), 35px) 80px; /* <--- Cambio aquí */
-            gap: 15px 5px; 
-            align-items: center; /* Alineamos todo al centro vertical */
-            overflow-x: auto; 
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.65); 
-            border-radius: 22px;
+        input:focus {
+            border-color: var(--accent);
+            background: rgba(255,255,255,0.08);
+        }
+        input::placeholder { color: var(--text-dim); }
+
+        /* ─── BOTONES ────────────────────────────────────────── */
+        button {
+            font-family: 'DM Mono', monospace;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.1s;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 12px 20px;
+        }
+        button:active { transform: scale(0.97); }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+            font-weight: 700;
+            width: 100%;
+        }
+        .btn-primary:hover { opacity: 0.9; }
+
+        .btn-google {
+            background: #fff;
+            color: #000;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.07);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.12); }
+
+        .btn-danger {
+            background: rgba(255, 77, 77, 0.12);
+            color: var(--danger);
+            border: 1px solid rgba(255, 77, 77, 0.25);
+        }
+
+        .divider {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 11px;
+            letter-spacing: 2px;
+            margin: 18px 0;
+        }
+
+        /* ─── ENCABEZADO ─────────────────────────────────────── */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            background: var(--surface);
+            padding: 18px 24px;
+            border-radius: var(--radius-lg);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+        }
+        #titulo-app {
+            font-family: 'Syne', sans-serif;
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #e8e8e8, #999);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        /* Esquina superior izquierda fija */
-        .sticky-header-corner {
-            position: sticky;
-            left: 0;
-            background: #1a1a1a !important; 
-            z-index: 10;
-            height: 100%;
-            /* Pegado total al borde del grid */
-            margin-left: -20px; 
-            padding-left: 20px;
+        /* ─── GRID ───────────────────────────────────────────── */
+        .tracker-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(var(--days), 34px) 90px;
+            gap: 12px 4px;
+            align-items: center;
+            overflow-x: auto;
+            padding: 20px;
+            background: var(--surface-2);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--border);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.1) transparent;
         }
+        .tracker-grid::-webkit-scrollbar { height: 4px; }
+        .tracker-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 
-        /* Nombres de hábitos fijos */
-        /* 2. Limpiamos el habit-container (ya no lleva botón aquí) */
+        /* Columna sticky izquierda */
         .habit-container {
             display: flex;
             align-items: center;
-            min-width: 70px;
+            min-width: 80px;
             position: sticky;
             left: 0;
-            background: #1a1a1a !important;
+            background: #141414;
             z-index: 9;
-            margin-left: -20px; 
-            padding-left: 15px;
+            margin-left: -20px;
+            padding-left: 16px;
             border-radius: 0 10px 10px 0;
+            height: 100%;
         }
+        .habit-name {
+            font-size: 11px;
+            color: #fff;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 68px;
+        }
+
+        /* Cabecera fechas */
+        .date-header-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+        .date-dow {
+            font-size: 8px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .date-num {
+            font-size: 10px;
+            color: rgba(255,255,255,0.5);
+            font-weight: 500;
+        }
+        .date-today .date-num {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* Sticky esquina */
+        .sticky-corner {
+            position: sticky;
+            left: 0;
+            background: #141414;
+            z-index: 10;
+            margin-left: -20px;
+            padding-left: 16px;
+        }
+
+        /* Celdas */
+        .cell {
+            width: 28px;
+            height: 28px;
+            background: rgba(255,255,255,0.06);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+            border: 1px solid rgba(255,255,255,0.04);
+            justify-self: center;
+        }
+        .cell:hover { background: rgba(255,255,255,0.13); transform: scale(1.1); }
+        .cell:active { transform: scale(0.92); }
+        .cell.completed {
+            background: var(--green);
+            box-shadow: 0 0 12px var(--green-glow);
+            border-color: transparent;
+        }
+        .cell.future {
+            opacity: 0.08;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .cell.loading {
+            opacity: 0.5;
+            pointer-events: none;
+            animation: pulse 0.6s infinite alternate;
+        }
+        @keyframes pulse { to { opacity: 0.9; } }
+
+        /* Racha */
         .streak-wrapper {
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            gap: 10px;
+            gap: 8px;
         }
-
-        .habit-name { font-size: 11px; color: #fff; font-weight: 500; }
+        .streak-badge {
+            min-width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid rgba(76,175,80,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #4CAF50;
+            background: rgba(0,0,0,0.3);
+            font-family: 'Syne', sans-serif;
+        }
+        .streak-badge.hot {
+            border-color: #ff8c00;
+            color: #ff8c00;
+            box-shadow: 0 0 10px rgba(255,140,0,0.3);
+        }
         .btn-delete {
             background: transparent;
-            color: rgba(255, 77, 77, 0.4);
-            border: none;
+            color: rgba(255, 77, 77, 0.35);
             font-size: 20px;
             cursor: pointer;
-            transition: 0.2s;
-            padding: 0 5px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            transition: color 0.2s, background 0.2s;
+            line-height: 1;
         }
         .btn-delete:hover {
-            color: #ff4d4d;
-            transform: scale(1.2);
-        }
-        
-        .cell-wrapper { display: flex; flex-direction: column; align-items: center; height: 55px; justify-content: flex-end; }
-        .cell-date { font-size: 10px; color: rgba(255,255,255,0.4); margin-bottom: 5px; font-weight: bold; }
-
-        .cell { 
-            width: 28px; height: 28px; 
-            background-color: rgba(255, 255, 255, 0.07); 
-            border-radius: 8px; cursor: pointer; transition: 0.2s;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-        }
-        .cell.completed { background-color: #17971b; box-shadow: 0 0 15px rgba(23, 151, 27, 0.4); }
-        .cell.future { opacity: 0.1; cursor: not-allowed; pointer-events: none; }
-
-        .streak-badge {
-            width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(76, 175, 80, 0.5);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 14px; font-weight: bold; color: #4CAF50; background: rgba(0,0,0,0.3);
+            color: var(--danger);
+            background: rgba(255, 77, 77, 0.1);
         }
 
-        /* ESTADÍSTICAS */
-        .stats-container { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .stat-card { background: rgba(0, 0, 0, 0.85); padding: 25px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15); text-align: center; }
-        .stat-card h3 { margin: 0 0 15px 0; font-size: 16px; color: #ffffff; text-transform: uppercase; }
-        .stat-value { font-size: 26px; font-weight: 800; background: linear-gradient(to right, #4CAF50, #00FF88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; }
-        .stat-label { font-size: 11px; color: #aaaaaa; margin-top: 4px; font-weight: bold; text-transform: uppercase; }
+        /* ─── ESTADÍSTICAS ───────────────────────────────────── */
+        .section-label {
+            margin-top: 36px;
+            margin-bottom: 14px;
+            color: var(--text-dim);
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        .stat-card {
+            background: var(--surface-2);
+            padding: 22px 24px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+        }
+        .stat-card h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .stat-cols { display: flex; justify-content: space-around; }
+        .stat-col { text-align: center; }
+        .stat-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 24px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #4CAF50, #00FF88);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+        .stat-label {
+            font-size: 9px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
 
-        button { background: #3eef44; color: black; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        /* ─── ESTADO VACÍO ───────────────────────────────────── */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-dim);
+            font-size: 13px;
+            line-height: 2;
+        }
 
+        /* ─── AUTH ERROR ─────────────────────────────────────── */
+        #auth-error {
+            color: var(--danger);
+            margin-top: 14px;
+            font-size: 12px;
+            min-height: 18px;
+            text-align: center;
+        }
+
+        /* ─── RESPONSIVE ─────────────────────────────────────── */
         @media (max-width: 480px) {
-            #titulo-app { font-size: 20px; }
-            .header { padding: 15px; flex-direction: column; gap: 10px; }
-            /* AJUSTES IPHONE */
-            .tracker-grid { 
-            grid-template-columns: 70px repeat(var(--days), 35px) 80px; 
-            padding: 10px; 
-            }
-            .habit-container { min-width: 70px; margin-left: -10px; padding-left: 10px; }
-            .habit-name { font-size: 11px; }
+            body { padding: 12px; }
+            #titulo-app { font-size: 16px; }
+            .header { padding: 14px 16px; }
+            .tracker-grid { padding: 12px; gap: 10px 3px; }
+            .habit-container { margin-left: -12px; min-width: 72px; }
+            .cell { width: 25px; height: 25px; }
+            #auth-container { padding: 32px 24px; margin-top: 40px; }
         }
     </style>
 </head>
 <body>
 
-    <div id="auth-container">
-        <h1 style="color: white; margin-bottom: 30px; letter-spacing: -2px;">RomaTrack</h1>
-        <input type="email" id="email" placeholder="Email">
-        <div style="height: 10px;"></div>
-        <input type="password" id="password" placeholder="Contraseña">
-        <button onclick="acceder()" style="width: 100%; margin-top: 20px;">Entrar / Registrarse</button>
-        <div style="margin: 20px 0; color: rgba(255,255,255,0.3); font-size: 12px;">O TAMBIÉN</div>
-        <button onclick="loginConGoogle()" style="background: white; color: black; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
-            Entrar con Google
-        </button>
-        <p id="auth-error" style="color: #ff4d4d; margin-top: 15px; font-size: 13px;"></p>
-    </div>
+    <!-- TOAST -->
+    <div id="toast"></div>
 
-    <div id="app-container" style="display: none;">
-        <div class="header">
-            <h1 id="titulo-app">Cargando...</h1>
-            <div style="display: flex; gap: 10px;">
-                <button onclick="crearHabitoReal()">+ Nuevo</button>
-                <button onclick="cerrarSesion()" style="background: #333; color: white;">Salir</button>
+    <!-- MODAL NUEVO HÁBITO -->
+    <div id="modal-overlay">
+        <div id="modal-box">
+            <h2>Nuevo hábito</h2>
+            <input type="text" id="modal-input" placeholder="Ej: Meditar 10 min" maxlength="30" autocomplete="off">
+            <div class="modal-actions">
+                <button class="btn-primary" style="flex:1" onclick="confirmarHabito()">Crear</button>
+                <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
             </div>
         </div>
-        
+    </div>
+
+    <!-- LOGIN -->
+    <div id="auth-container">
+        <h1>RomaTrack</h1>
+        <input type="email" id="email" placeholder="Correo electrónico" autocomplete="email">
+        <div style="height: 10px;"></div>
+        <input type="password" id="password" placeholder="Contraseña" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter') acceder()">
+        <button class="btn-primary" onclick="acceder()" style="margin-top: 18px;">Entrar / Registrarse</button>
+        <div class="divider">O TAMBIÉN</div>
+        <button class="btn-google" onclick="loginConGoogle()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="Google">
+            Entrar con Google
+        </button>
+        <p id="auth-error"></p>
+    </div>
+
+    <!-- APP -->
+    <div id="app-container" style="display: none;">
+        <div class="header">
+            <span id="titulo-app">Cargando...</span>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" style="width:auto" onclick="abrirModal()">+ Nuevo</button>
+                <button class="btn-secondary" onclick="cerrarSesion()">Salir</button>
+            </div>
+        </div>
+
         <div id="grid-container" class="tracker-grid"></div>
 
-        <h2 style="margin-top: 40px; color: rgba(255,255,255,0.4); font-size: 14px; text-transform: uppercase;">Estadísticas</h2>
+        <p class="section-label">Estadísticas</p>
         <div id="stats-panel" class="stats-container"></div>
     </div>
 
