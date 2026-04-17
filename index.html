@@ -11,7 +11,7 @@
     <title>RomaTrack - Habit Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* 1. CONFIGURACIÓN DE FONDO DINÁMICO */
+        /* 1. CONFIGURACIÓN DE FONDO */
         body { 
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
             margin: 0;
@@ -38,7 +38,7 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
         }
 
-        /* 3. TÍTULO CON GRADIENTE RESPONSIVO */
+        /* 3. TÍTULO CON GRADIENTE */
         #titulo-app {
             font-size: 32px;
             font-weight: 900;
@@ -63,42 +63,48 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
-        /* 5. EL GRID CON COLUMNA PEGAJOSA (Sticky) CORREGIDA */
+        /* 5. EL GRID CON AJUSTE DE MARGEN IZQUIERDO */
         .tracker-grid { 
             display: grid; 
-            /* REDUCIDO: De 160px a 120px para que el rectángulo sea más angosto */
             grid-template-columns: 120px repeat(var(--days), 35px) 60px; 
             gap: 15px 5px; 
             align-items: end;
             overflow-x: auto; 
-            padding: 20px;
+            padding: 20px; /* Mantenemos el padding para el resto del grid */
             background: rgba(0, 0, 0, 0.65); 
             border-radius: 22px;
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
+        /* Esquina superior izquierda fija */
         .sticky-header-corner {
             position: sticky;
             left: 0;
             background: rgba(25, 25, 25, 0.98); 
             z-index: 6;
             height: 100%;
+            /* AJUSTE: Movemos a la izquierda para pegar al borde */
+            margin-left: -20px; 
+            padding-left: 20px;
         }
 
+        /* Nombres de hábitos fijos */
         .habit-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            /* REDUCIDO: Ajustado a 120px */
             min-width: 120px;
-            padding-right: 15px;
             position: sticky;
             left: 0;
             background: rgba(25, 25, 25, 0.98);
             z-index: 5;
             border-radius: 10px 0 0 10px;
-            padding-left: 10px;
+            /* AJUSTE: Margen negativo igual al padding del grid para pegar al borde */
+            margin-left: -20px; 
+            padding-left: 20px;
+            padding-right: 15px;
+            box-shadow: 4px 0 8px rgba(0,0,0,0.3);
         }
 
         /* 6. ESTILOS DE CELDAS */
@@ -123,7 +129,7 @@
             font-size: 14px; font-weight: bold; color: #4CAF50; background: rgba(0,0,0,0.3);
         }
 
-        /* 7. ESTADÍSTICAS OSCURAS */
+        /* 7. ESTADÍSTICAS */
         .stats-container { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .stat-card { background: rgba(0, 0, 0, 0.85); padding: 25px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15); text-align: center; }
         .stat-card h3 { margin: 0 0 15px 0; font-size: 16px; color: #ffffff; text-transform: uppercase; }
@@ -138,9 +144,15 @@
         @media (max-width: 480px) {
             #titulo-app { font-size: 20px; }
             .header { padding: 15px; flex-direction: column; gap: 10px; }
-            /* REDUCIDO: De 130px a 100px para móvil */
-            .tracker-grid { grid-template-columns: 100px repeat(var(--days), 35px) 60px; }
-            .habit-container { min-width: 100px; }
+            .tracker-grid { 
+                grid-template-columns: 100px repeat(var(--days), 35px) 60px; 
+                padding: 10px; /* Reducimos padding en móvil */
+            }
+            .habit-container, .sticky-header-corner { 
+                min-width: 100px; 
+                margin-left: -10px; /* Ajuste para los 10px de padding del grid en móvil */
+                padding-left: 10px; 
+            }
             body { background-size: 160% auto; } 
         }
     </style>
