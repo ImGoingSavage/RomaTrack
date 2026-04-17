@@ -2,7 +2,7 @@ const supabaseUrl = 'https://dxboyuqtowwmxhyhcagg.supabase.co';
 const supabaseKey = 'sb_publishable_uU43eCEREE8MjE0ajSYL-g_cmY61_bl'; 
 const miSupabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// --- LÓGICA DE CALENDARIO ---
+// --- CALENDARIO ---
 const ahora = new Date();
 const añoActual = ahora.getFullYear();
 const mesActual = ahora.getMonth(); 
@@ -48,12 +48,18 @@ async function loginConGoogle() {
     });
 }
 
+// ARREGLADO: Función de salir asíncrona y segura
 async function cerrarSesion() {
-    await miSupabase.auth.signOut();
-    window.location.href = window.location.origin + window.location.pathname;
+    try {
+        await miSupabase.auth.signOut();
+        // Forzamos el regreso a la URL limpia
+        window.location.href = window.location.origin + window.location.pathname;
+    } catch (e) {
+        location.reload();
+    }
 }
 
-// --- TRACKER PRINCIPAL ---
+// --- CARGAR DATOS ---
 async function cargarTracker(userId) {
     const container = document.getElementById('grid-container');
     const hoyString = new Date().toLocaleDateString('en-CA');
@@ -64,13 +70,12 @@ async function cargarTracker(userId) {
     const { data: habitos } = await miSupabase.from('habito').select('*').eq('id_usuario', userId);
     const { data: registros } = await miSupabase.from('registro_habito').select('*').eq('id_usuario', userId);
 
-    // Primer div vacío para la esquina pegajosa
     container.innerHTML = "<div class='sticky-header-corner'></div>"; 
     fechasDelMes.forEach(f => container.innerHTML += `<div class="date-label">${f.split('-')[2]}</div>`);
     container.innerHTML += `<div class="date-label">Racha</div>`;
 
     if (!habitos || habitos.length === 0) {
-        container.innerHTML += `<div style="grid-column: 1 / -1; text-align:center; padding:20px; color:#666;">Crea tu primer hábito.</div>`;
+        container.innerHTML += `<div style="grid-column: 1 / -1; text-align:center; padding:40px; color:#666;">Registra tu primer hábito para empezar.</div>`;
         return;
     }
 
@@ -108,7 +113,6 @@ function actualizarEstadisticas(habitos, registros) {
 
     habitos.forEach(habito => {
         const misReg = registros.filter(r => r.id_hab === habito.id_hab);
-        
         const regMes = misReg.filter(r => r.fecha_cumplido.startsWith(hoy.toLocaleDateString('en-CA').substring(0,7))).length;
         const pctMes = ((regMes / diaMes) * 100).toFixed(0);
 
