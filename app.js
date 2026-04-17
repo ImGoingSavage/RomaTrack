@@ -15,7 +15,7 @@ for (let i = 1; i <= ultimoDiaMes; i++) {
     fechasDelMes.push(`${añoActual}-${String(mesActual + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
 }
 
-// --- 1. AUTENTICACIÓN Y ESCUCHA DE SESIÓN ---
+// --- AUTENTICACIÓN ---
 miSupabase.auth.onAuthStateChange((event, session) => {
     if (session) {
         document.getElementById('auth-container').style.display = 'none';
@@ -27,7 +27,6 @@ miSupabase.auth.onAuthStateChange((event, session) => {
     }
 });
 
-// Acceso con Email / Contraseña
 async function acceder() {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value.trim();
@@ -42,23 +41,19 @@ async function acceder() {
     }
 }
 
-// NUEVO: Acceso con Google
 async function loginConGoogle() {
-    const { error } = await miSupabase.auth.signInWithOAuth({
+    await miSupabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-            // Esto detecta automáticamente si estás en localhost o en GitHub Pages
-            redirectTo: window.location.origin + window.location.pathname
-        }
+        options: { redirectTo: window.location.origin + window.location.pathname }
     });
-
-    if (error) {
-        console.error("Error Google Auth:", error.message);
-        alert("No se pudo conectar con Google.");
-    }
 }
 
-// --- 2. TRACKER PRINCIPAL ---
+async function cerrarSesion() {
+    await miSupabase.auth.signOut();
+    window.location.href = window.location.origin + window.location.pathname;
+}
+
+// --- TRACKER PRINCIPAL ---
 async function cargarTracker(userId) {
     const container = document.getElementById('grid-container');
     const hoyString = new Date().toLocaleDateString('en-CA');
@@ -69,12 +64,13 @@ async function cargarTracker(userId) {
     const { data: habitos } = await miSupabase.from('habito').select('*').eq('id_usuario', userId);
     const { data: registros } = await miSupabase.from('registro_habito').select('*').eq('id_usuario', userId);
 
-    container.innerHTML = "<div></div>"; 
+    // Primer div vacío para la esquina pegajosa
+    container.innerHTML = "<div class='sticky-header-corner'></div>"; 
     fechasDelMes.forEach(f => container.innerHTML += `<div class="date-label">${f.split('-')[2]}</div>`);
     container.innerHTML += `<div class="date-label">Racha</div>`;
 
     if (!habitos || habitos.length === 0) {
-        container.innerHTML += `<div style="grid-column: 1 / -1; text-align:center; padding:20px; color:#666;">Sin hábitos aún.</div>`;
+        container.innerHTML += `<div style="grid-column: 1 / -1; text-align:center; padding:20px; color:#666;">Crea tu primer hábito.</div>`;
         return;
     }
 
@@ -103,7 +99,6 @@ async function cargarTracker(userId) {
     actualizarEstadisticas(habitos, registros);
 }
 
-// --- 3. LÓGICA DE ESTADÍSTICAS ---
 function actualizarEstadisticas(habitos, registros) {
     const statsPanel = document.getElementById('stats-panel');
     statsPanel.innerHTML = "";
@@ -114,17 +109,14 @@ function actualizarEstadisticas(habitos, registros) {
     habitos.forEach(habito => {
         const misReg = registros.filter(r => r.id_hab === habito.id_hab);
         
-        // Mensual
         const regMes = misReg.filter(r => r.fecha_cumplido.startsWith(hoy.toLocaleDateString('en-CA').substring(0,7))).length;
         const pctMes = ((regMes / diaMes) * 100).toFixed(0);
 
-        // Semanal (desde el lunes)
         const inicioSem = new Date(hoy);
         inicioSem.setDate(hoy.getDate() - (diaSemana - 1));
         const regSem = misReg.filter(r => new Date(r.fecha_cumplido + "T00:00:00") >= inicioSem.setHours(0,0,0,0)).length;
         const pctSem = ((regSem / diaSemana) * 100).toFixed(0);
 
-        // Total
         let pctTotal = 0;
         if (misReg.length > 0) {
             const inicio = new Date(misReg.map(r => r.fecha_cumplido).sort()[0] + "T00:00:00");
@@ -144,27 +136,15 @@ function actualizarEstadisticas(habitos, registros) {
     });
 }
 
-// --- 4. CÁLCULO DE RACHA ---
 function calcularRacha(idHab, registros) {
     let racha = 0; let b = new Date(); b.setHours(0,0,0,0);
     while (true) {
         const f = b.toLocaleDateString('en-CA');
-        if (registros.some(r => r.id_hab === idHab && r.fecha_cumplido === f)) { 
-            racha++; 
-            b.setDate(b.getDate()-1); 
-        }
-        else { 
-            if (f === new Date().toLocaleDateString('en-CA')) { 
-                b.setDate(b.getDate()-1); 
-                continue; 
-            } 
-            break; 
-        }
-    } 
-    return racha;
+        if (registros.some(r => r.id_hab === idHab && r.fecha_cumplido === f)) { racha++; b.setDate(b.getDate()-1); }
+        else { if (f === new Date().toLocaleDateString('en-CA')) { b.setDate(b.getDate()-1); continue; } break; }
+    } return racha;
 }
 
-// --- 5. ACCIONES (BORRAR, MARCAR, CREAR) ---
 async function borrarHabito(id, nom, user) {
     if (confirm(`¿Borrar ${nom}?`)) { 
         await miSupabase.from('habito').delete().eq('id_hab', id); 
@@ -180,14 +160,6 @@ async function toggleHabit(id, f, est, user) {
 
 async function crearHabitoReal() {
     const { data: { user } } = await miSupabase.auth.getUser();
-    const n = prompt("Nombre del nuevo hábito:");
-    if (n && user) { 
-        await miSupabase.from('habito').insert([{ habit_name: n, id_usuario: user.id }]); 
-        cargarTracker(user.id); 
-    }
-}
-
-function cerrarSesion() { 
-    miSupabase.auth.signOut(); 
-    location.reload(); 
+    const n = prompt("Hábito:");
+    if (n && user) { await miSupabase.from('habito').insert([{ habit_name: n, id_usuario: user.id }]); cargarTracker(user.id); }
 }
