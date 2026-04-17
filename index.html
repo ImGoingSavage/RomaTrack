@@ -11,7 +11,7 @@
     <title>RomaTrack - Habit Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* 1. CONFIGURACIÓN DE FONDO */
+        /* 1. CONFIGURACIÓN DE FONDO DINÁMICO */
         body { 
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
             margin: 0;
@@ -19,25 +19,26 @@
             color: white;
             background-image: url('fondo.png'); 
             background-size: cover;
-            background-position: center 20%; /* Ajustado para ver mejor el rostro */
+            background-position: center top; /* Para ver mejor el rostro en vertical */
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-color: #0a0a0a; 
         }
 
-        /* 2. LOGIN */
+        /* 2. DISEÑO DEL LOGIN */
         #auth-container { 
             max-width: 350px; 
             margin: 100px auto; 
             text-align: center; 
-            background: rgba(15, 15, 15, 0.9); 
+            background: rgba(15, 15, 15, 0.85); 
             padding: 40px; 
             border-radius: 24px; 
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
         }
 
-        /* 3. TÍTULO */
+        /* 3. TÍTULO CON GRADIENTE RESPONSIVO */
         #titulo-app {
             font-size: 32px;
             font-weight: 900;
@@ -62,11 +63,10 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
-        /* 5. EL GRID CON COLUMNA FIJA CORREGIDA */
+        /* 5. EL GRID CON COLUMNA PEGAJOSA (Sticky) */
         .tracker-grid { 
             display: grid; 
-            /* Aumentamos un poco el ancho de la primera columna para evitar roces */
-            grid-template-columns: 170px repeat(var(--days), 35px) 60px; 
+            grid-template-columns: 160px repeat(var(--days), 35px) 60px; 
             gap: 15px 5px; 
             align-items: end;
             overflow-x: auto; 
@@ -77,33 +77,29 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* La esquina superior izquierda fija */
         .sticky-header-corner {
             position: sticky;
             left: 0;
-            background: #1a1a1a !important; /* COLOR SÓLIDO */
-            z-index: 10;
+            background: rgba(25, 25, 25, 0.98); /* Fondo sólido para tapar lo de abajo */
+            z-index: 6;
             height: 100%;
-            margin-left: -20px; /* Compensa el padding del contenedor */
-            padding-left: 20px;
         }
 
-        /* Los nombres de los hábitos fijos */
         .habit-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            min-width: 160px;
+            padding-right: 15px;
             position: sticky;
             left: 0;
-            background: #1a1a1a !important; /* COLOR SÓLIDO TOTAL */
-            z-index: 9;
-            margin-left: -20px; /* Alineación perfecta */
-            padding-left: 20px;
-            padding-right: 15px;
-            /* Sombra suave a la derecha para separar del contenido scrollable */
-            box-shadow: 5px 0 10px rgba(0,0,0,0.5); 
+            background: rgba(25, 25, 25, 0.98);
+            z-index: 5;
+            border-radius: 10px 0 0 10px;
+            padding-left: 10px;
         }
 
+        /* 6. ESTILOS DE CELDAS */
         .habit-name { font-size: 16px; color: #fff; font-weight: 500; }
         .btn-delete { background: transparent; color: rgba(255, 77, 77, 0.6); border: none; font-size: 20px; cursor: pointer; }
         
@@ -112,9 +108,9 @@
 
         .cell { 
             width: 28px; height: 28px; 
-            background-color: rgba(255, 255, 255, 0.1); 
+            background-color: rgba(255, 255, 255, 0.07); 
             border-radius: 8px; cursor: pointer; transition: 0.2s;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.03);
         }
         .cell.completed { background-color: #17971b; box-shadow: 0 0 15px rgba(23, 151, 27, 0.4); }
         .cell.future { opacity: 0.1; cursor: not-allowed; pointer-events: none; }
@@ -125,26 +121,24 @@
             font-size: 14px; font-weight: bold; color: #4CAF50; background: rgba(0,0,0,0.3);
         }
 
-        /* ESTADÍSTICAS */
+        /* 7. ESTADÍSTICAS OSCURAS */
         .stats-container { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .stat-card { background: rgba(0, 0, 0, 0.85); padding: 25px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15); text-align: center; }
         .stat-card h3 { margin: 0 0 15px 0; font-size: 16px; color: #ffffff; text-transform: uppercase; }
         .stat-value { font-size: 26px; font-weight: 800; background: linear-gradient(to right, #4CAF50, #00FF88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; }
         .stat-label { font-size: 11px; color: #aaaaaa; margin-top: 4px; font-weight: bold; text-transform: uppercase; }
 
+        /* 8. BOTONES E INPUTS */
         button { background: #3eef44; color: black; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         input { background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 14px; border-radius: 12px; width: 100%; box-sizing: border-box; outline: none; }
 
+        /* MEDIA QUERIES PARA IPHONE */
         @media (max-width: 480px) {
             #titulo-app { font-size: 20px; }
             .header { padding: 15px; flex-direction: column; gap: 10px; }
-            /* Ajuste fino para iPhone */
-            .tracker-grid { 
-                grid-template-columns: 140px repeat(var(--days), 35px) 60px; 
-                padding-left: 10px;
-            }
-            .habit-container, .sticky-header-corner { min-width: 140px; margin-left: -10px; padding-left: 10px;}
-            body { background-size: contain; background-position: center 10%; } 
+            .tracker-grid { grid-template-columns: 130px repeat(var(--days), 35px) 60px; }
+            .habit-container { min-width: 130px; }
+            body { background-size: 160% auto; } /* Zoom ajustado para ver la cara */
         }
     </style>
 </head>
