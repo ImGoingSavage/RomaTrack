@@ -4,8 +4,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RomaTrack">
-
     <link rel="apple-touch-icon" href="icono.png">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RomaTrack - Habit Tracker</title>
@@ -40,14 +40,26 @@
 
         /* 3. TÍTULO CON GRADIENTE */
         #titulo-app {
-            font-size: 38px;
+            font-size: 32px; /* Lo bajamos un poco de 38px a 32px para escritorio */
             font-weight: 900;
             margin: 0;
             letter-spacing: -1.5px;
-            background: linear-gradient(to right, #e6e6e6,  #dad9d9);
+            background: linear-gradient(to right, #e6e6e6, #dad9d9);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             display: inline-block;
+        }
+
+
+        @media (max-width: 480px) {
+            #titulo-app {
+                font-size: 20px;       /* Tamaño mucho más cómodo para iPhone */
+                letter-spacing: -0.5px; /* Menos apretado para que se lea mejor en pequeño */
+            }
+    
+            .header {
+                padding: 15px 20px;    /* Reducimos el margen interno del encabezado en móvil */
+            }
         }
 
         /* 4. ENCABEZADO PRINCIPAL */
@@ -129,7 +141,7 @@
             background: rgba(0,0,0,0.3);
         }
 
-        /* 7. PANEL DE ESTADÍSTICAS (MODIFICADO) */
+        /* 7. PANEL DE ESTADÍSTICAS */
         .stats-container {
             margin-top: 30px;
             display: grid;
@@ -138,21 +150,18 @@
         }
 
         .stat-card {
-            /* Cambio a fondo oscuro sólido */
             background: rgba(0, 0, 0, 0.85); 
             padding: 25px;
             border-radius: 20px;
-            /* Eliminamos el blur exagerado */
             border: 1px solid rgba(255, 255, 255, 0.15);
             text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* Color de los nombres de los hábitos en stats */
         .stat-card h3 { 
             margin: 0 0 15px 0; 
             font-size: 16px; 
-            color: #ffffff; /* Texto blanco */
+            color: #ffffff; 
             text-transform: uppercase; 
             letter-spacing: 1px; 
         }
@@ -160,16 +169,15 @@
         .stat-value {
             font-size: 26px;
             font-weight: 800;
-            background: linear-gradient(to right, #4CAF50, #00FF88); /* Gradiente verde más vivo */
+            background: linear-gradient(to right, #4CAF50, #00FF88); 
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             display: inline-block;
         }
 
-        /* Color de las etiquetas "Semana", "Mes", etc. */
         .stat-label { 
             font-size: 11px; 
-            color: #aaaaaa; /* Gris claro para que resalte en el fondo negro */
+            color: #aaaaaa; 
             margin-top: 4px; 
             font-weight: bold; 
             text-transform: uppercase;
@@ -196,7 +204,16 @@
         <input type="email" id="email" placeholder="Email">
         <div style="height: 10px;"></div>
         <input type="password" id="password" placeholder="Contraseña">
+        
         <button onclick="acceder()" style="width: 100%; margin-top: 20px;">Entrar / Registrarse</button>
+
+        <div style="margin: 20px 0; color: rgba(255,255,255,0.3); font-size: 12px;">O TAMBIÉN</div>
+
+        <button onclick="loginConGoogle()" style="background: white; color: black; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
+            Entrar con Google
+        </button>
+
         <p id="auth-error" style="color: #ff4d4d; margin-top: 15px; font-size: 13px;"></p>
     </div>
 
@@ -211,7 +228,7 @@
         
         <div id="grid-container" class="tracker-grid"></div>
 
-        <h2 style="margin-top: 40px; color: rgba(0, 0, 0, 0.4); font-size: 16px; text-transform: uppercase; letter-spacing: 1px;">Estadísticas de Cumplimiento</h2>
+        <h2 style="margin-top: 40px; color: rgba(255,255,255,0.3); font-size: 16px; text-transform: uppercase; letter-spacing: 1px;">Estadísticas de Cumplimiento</h2>
         <div id="stats-panel" class="stats-container"></div>
     </div>
 

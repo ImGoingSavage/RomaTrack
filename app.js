@@ -15,7 +15,7 @@ for (let i = 1; i <= ultimoDiaMes; i++) {
     fechasDelMes.push(`${añoActual}-${String(mesActual + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
 }
 
-// --- AUTENTICACIÓN ---
+// --- 1. AUTENTICACIÓN Y ESCUCHA DE SESIÓN ---
 miSupabase.auth.onAuthStateChange((event, session) => {
     if (session) {
         document.getElementById('auth-container').style.display = 'none';
@@ -27,6 +27,7 @@ miSupabase.auth.onAuthStateChange((event, session) => {
     }
 });
 
+// Acceso con Email / Contraseña
 async function acceder() {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value.trim();
@@ -41,7 +42,23 @@ async function acceder() {
     }
 }
 
-// --- TRACKER PRINCIPAL ---
+// NUEVO: Acceso con Google
+async function loginConGoogle() {
+    const { error } = await miSupabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+            // Esto detecta automáticamente si estás en localhost o en GitHub Pages
+            redirectTo: window.location.origin + window.location.pathname
+        }
+    });
+
+    if (error) {
+        console.error("Error Google Auth:", error.message);
+        alert("No se pudo conectar con Google.");
+    }
+}
+
+// --- 2. TRACKER PRINCIPAL ---
 async function cargarTracker(userId) {
     const container = document.getElementById('grid-container');
     const hoyString = new Date().toLocaleDateString('en-CA');
@@ -86,7 +103,7 @@ async function cargarTracker(userId) {
     actualizarEstadisticas(habitos, registros);
 }
 
-// --- LÓGICA DE ESTADÍSTICAS ---
+// --- 3. LÓGICA DE ESTADÍSTICAS ---
 function actualizarEstadisticas(habitos, registros) {
     const statsPanel = document.getElementById('stats-panel');
     statsPanel.innerHTML = "";
@@ -127,16 +144,27 @@ function actualizarEstadisticas(habitos, registros) {
     });
 }
 
-// --- OTROS ---
+// --- 4. CÁLCULO DE RACHA ---
 function calcularRacha(idHab, registros) {
     let racha = 0; let b = new Date(); b.setHours(0,0,0,0);
     while (true) {
         const f = b.toLocaleDateString('en-CA');
-        if (registros.some(r => r.id_hab === idHab && r.fecha_cumplido === f)) { racha++; b.setDate(b.getDate()-1); }
-        else { if (f === new Date().toLocaleDateString('en-CA')) { b.setDate(b.getDate()-1); continue; } break; }
-    } return racha;
+        if (registros.some(r => r.id_hab === idHab && r.fecha_cumplido === f)) { 
+            racha++; 
+            b.setDate(b.getDate()-1); 
+        }
+        else { 
+            if (f === new Date().toLocaleDateString('en-CA')) { 
+                b.setDate(b.getDate()-1); 
+                continue; 
+            } 
+            break; 
+        }
+    } 
+    return racha;
 }
 
+// --- 5. ACCIONES (BORRAR, MARCAR, CREAR) ---
 async function borrarHabito(id, nom, user) {
     if (confirm(`¿Borrar ${nom}?`)) { 
         await miSupabase.from('habito').delete().eq('id_hab', id); 
@@ -152,8 +180,14 @@ async function toggleHabit(id, f, est, user) {
 
 async function crearHabitoReal() {
     const { data: { user } } = await miSupabase.auth.getUser();
-    const n = prompt("Hábito:");
-    if (n && user) { await miSupabase.from('habito').insert([{ habit_name: n, id_usuario: user.id }]); cargarTracker(user.id); }
+    const n = prompt("Nombre del nuevo hábito:");
+    if (n && user) { 
+        await miSupabase.from('habito').insert([{ habit_name: n, id_usuario: user.id }]); 
+        cargarTracker(user.id); 
+    }
 }
 
-function cerrarSesion() { miSupabase.auth.signOut(); location.reload(); }
+function cerrarSesion() { 
+    miSupabase.auth.signOut(); 
+    location.reload(); 
+}
